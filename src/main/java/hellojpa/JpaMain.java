@@ -23,6 +23,8 @@ public class JpaMain {
             member.setId(testInt);
             member.setName("HelloJPA999");
 
+            member.setRoleRate(RoleRate.ADMIN);
+
 
             System.out.println("=== BEFORE === ");
             // 영속
