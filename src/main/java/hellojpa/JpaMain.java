@@ -1,6 +1,11 @@
 package hellojpa;
 
+import org.hibernate.annotations.common.reflection.XMember;
+
 import javax.persistence.*;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 import java.util.List;
 
 public class JpaMain {
@@ -15,47 +20,42 @@ public class JpaMain {
         tx.begin();  // transaction 시작, JPA의 모든 데이터 변경은 트랜잭션 안에서 실행
         try{
 
-            //    Member member = em.find(Member.class,1); // DB에서 조회
+            // JPA의 복잡한 쿼리 처리 방법
 
-            int testInt = 12345;
-            // 비영속
-            Member member = new Member();
-            member.setId(testInt);
-            member.setName("HelloJPA999");
+            // 1. JPQL : 객체지향 쿼리 언어
+            List<Member> resultList = em.createQuery("select m FROM Member m where m.name like '%kim%'",
+                    Member.class
+            ).getResultList();
 
-            member.setRoleRate(RoleRate.ADMIN);
+            // 2. Creiteria : JPQL 을 동적으로 사용하게끔 도와주는 빌더, 표준스펙이지만 실용적이지 않음( 유지보수 힘듬 )
+            CriteriaBuilder cb = em.getCriteriaBuilder();
+            CriteriaQuery<Member> query = cb.createQuery(Member.class);
+            Root<Member> m = query.from(Member.class);
+            CriteriaQuery<Member> cq = query.select(m).where(cb.equal(m.get("name"),"kim"));
+
+            List<Member> memberList = em.createQuery(cq).getResultList();
+
+            // 3. QueryDSL : Creiteria 처럼 JPQL을 동적으로 사용가능하게 끔 도와주는 빌더인데 오픈소스, 더 실용적
+            /* QMember m = Qmember.member;
+               List<Member> result = queryFactory
+                        .select(m)
+                        .from(m)
+                        .where(m.name.like("kim"))
+                        .orderBy(m.id)
+                        .fetch();
+
+             */
+            // 4. 네이티브 SQL : JPA가 제공하는 SQL을 직접 사용하는 기능, JPQL로 해결할 수 없는 특정 DB에 의존하는 기능( 특정 함수를 꼭 사용해야 할 때.. )
+            em.createNativeQuery("select MEMBER_ID, city, street from MEMBER ")
+                            .getResultList();
 
 
-            System.out.println("=== BEFORE === ");
-            // 영속
-            em.persist(member); // DB저장이 아닌, 1차 캐쉬에 저장, DB저장은 tx.commit 될때 !
-            System.out.println("=== AFTER === ");
+            // 5. JDBCTemplate 나 Mybatis와 연동하여 사용
+            // flush( DB 에 영속성 컨택스트 정보 쿼리 실행 ) -> commit, createQuery 직전에 수행  flush만 조심하면 된다.
 
-            Member member1 = em.find(Member.class, testInt); // select 쿼리가 안나간다. Why? DB조회가 아닌, 영속성컨텍스트 1차캐시에 이미 존재하기 때문에, find 해서 return
-            Member member2 = em.find(Member.class, testInt);
-
-            System.out.println("flush 시작 ! "); // 변경탐지(스냅샷 vs 현재값 비교) -> Update 쿼리 SQL 저장소에 저장 -> DB SQL문 전송(Update뿐만 아니라 모든 SQL저장소에 있는 SQL문 전송!)
-            em.flush();
-            System.out.println("flush 끝 ! ");
-
-            System.out.println("result == " + (member1 == member2) ); // 영속성 컨택스트의 동일성 보장, 둘다 1차캐시에서 find
-
-
-            // 준영속
-            //  em.detach(member);
-
-//            List<Member> result = em.createQuery("select m from Member as m", Member.class).getResultList();  // JPQL:  Entity 객체를 대상으로 sql문이 실행된다.
-//
-//            for (Member member1 : result) {
-//                System.out.println("member1.getName() = " + member1.getName());
-//            }
-//       //     System.out.println("member.getId() = " + member.getId());
-//       //     System.out.println("member.getName() = " + member.getName());
-//
-//       //     member.setName("HiJPA"); // 마치 자바컬랙션 다루듯이 set, transaction이 커밋되는 시점에 JPA가 체크하여 DB update를 수행
 
             tx.commit(); //transaction 커밋
-
+            resultList.forEach(list -> System.out.println("Member = " + list));
         } catch (Exception e){
             tx.rollback();
         } finally {

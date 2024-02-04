@@ -9,17 +9,10 @@ import java.time.LocalDateTime;
 @Table(name ="Member")
 public class Member {
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
     @Column(name = "name", nullable = false, length = 100)
     private String userName;
-
-
-    @Enumerated(EnumType.STRING)
-    private RoleRate roleRate;
-
-
-    private LocalDate testLocalDate;
-    private LocalDateTime testLocalDateTime;
 
 
     @Lob
@@ -48,30 +41,6 @@ public class Member {
 
     public void setUserName(String userName) {
         this.userName = userName;
-    }
-
-    public RoleRate getRoleRate() {
-        return roleRate;
-    }
-
-    public void setRoleRate(RoleRate roleRate) {
-        this.roleRate = roleRate;
-    }
-
-    public LocalDate getTestLocalDate() {
-        return testLocalDate;
-    }
-
-    public void setTestLocalDate(LocalDate testLocalDate) {
-        this.testLocalDate = testLocalDate;
-    }
-
-    public LocalDateTime getTestLocalDateTime() {
-        return testLocalDateTime;
-    }
-
-    public void setTestLocalDateTime(LocalDateTime testLocalDateTime) {
-        this.testLocalDateTime = testLocalDateTime;
     }
 
     public String getDescription() {
